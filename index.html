@@ -95,6 +95,7 @@ body {
   <p>スコア：<span id="score">0</span></p>
 
 <script>
+let inputLocked = false;
 let isPaused = false;
 let isGameOver = false;
 let gameInterval = null;
@@ -273,10 +274,15 @@ document.body.tabIndex = 0;
 document.body.focus();
 
 document.addEventListener("keydown", (e) => {
-  if (moveInterval) return;
+  if (e.key === "ArrowLeft") {
+    stopMove();            // ← これが重要
+    startMove("left");
+  }
 
-  if (e.key === "ArrowLeft") startMove("left");
-  if (e.key === "ArrowRight") startMove("right");
+  if (e.key === "ArrowRight") {
+    stopMove();            // ← これが重要
+    startMove("right");
+  }
 });
 
 document.addEventListener("keyup", stopMove);
