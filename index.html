@@ -95,59 +95,44 @@ body {
   <p>スコア：<span id="score">0</span></p>
 
 <script>
-let inputLocked = false;
 let isPaused = false;
 let isGameOver = false;
-let gameInterval = null;
 let level = 1;
 let score = 0;
 let playerX = 180;
-let moveInterval = null;
+let movingLeft = false;
+let movingRight = false;
+let isSwiping = false;
 
 const leftBtn = document.getElementById("left");
 const rightBtn = document.getElementById("right");
 
-// プレイヤー移動
-function movePlayer(direction) {
-  if (direction === "left") playerX -= 5;
-  if (direction === "right") playerX += 5;
-
-  if (playerX < 0) playerX = 0;
-  if (playerX > 360) playerX = 360;
-
-  player.style.left = playerX + "px";
-}
-
-// 押しっぱなし処理
-function startMove(direction) {
-  stopMove();
-  moveInterval = setInterval(() => {
-    movePlayer(direction);
-  }, 30);
-}
-
-function stopMove() {
-  if (moveInterval) {
-    clearInterval(moveInterval);
-    moveInterval = null;
-  }
-}
-
 // ボタン操作
+// ボタン操作（フラグ方式）
 leftBtn.addEventListener("touchstart", (e) => {
   e.preventDefault();
-  startMove("left");
+  movingLeft = true;
 });
 
 rightBtn.addEventListener("touchstart", (e) => {
   e.preventDefault();
-  startMove("right");
+  movingRight = true;
 });
 
-leftBtn.addEventListener("touchend", stopMove);
-rightBtn.addEventListener("touchend", stopMove);
-leftBtn.addEventListener("touchcancel", stopMove);
-rightBtn.addEventListener("touchcancel", stopMove);
+leftBtn.addEventListener("touchend", () => {
+  movingLeft = false;
+});
+rightBtn.addEventListener("touchend", () => {
+  movingRight = false;
+});
+
+leftBtn.addEventListener("touchcancel", () => {
+  movingLeft = false;
+});
+rightBtn.addEventListener("touchcancel", () => {
+  movingRight = false;
+});
+
 
 const scoreElement = document.getElementById("score");
 
@@ -182,21 +167,22 @@ function isCollision() {
     playerRect.top > enemyRect.bottom
   );
 }
-
-function moveEnemy() {
+function moveEnemy(delta) {
   if (isGameOver || isPaused) return;
 
-
-  enemyTop += enemySpeed;
+  enemyTop += enemySpeed * (delta / 16.6);
   enemy.style.top = enemyTop + "px";
 
-  if (enemyTop > 400) {
-    enemyTop = 0;
+  if (enemyTop > 440) {
+    enemyTop = -40;
     score++;
     scoreElement.textContent = score;
 
-    level++;
-    randomEnemySpeed();
+    if (score % 3 === 0) {
+      level++;
+      randomEnemySpeed();
+    }
+
     randomEnemyPosition();
   }
 
@@ -204,21 +190,17 @@ function moveEnemy() {
     gameOver();
   }
 }
+
 function gameOver() {
   isGameOver = true;
-
-  stopMove(); 
-  clearInterval(gameInterval);
-  alert("ゲームオーバー！OKでリスタート");
+  alert("ゲームオーバー！OKでリスタート修正版４");
   resetGame();
 }
 
 function resetGame() {
-  stopMove();
-
   score = 0;
   level = 1;
-  enemyTop = 0;
+  enemyTop = -40;
   playerX = 180;
 
   scoreElement.textContent = score;
@@ -230,23 +212,15 @@ function resetGame() {
   isPaused = false;
   pauseText.style.display = "none";
   isGameOver = false;
-
-  gameInterval = setInterval(moveEnemy, 50);
 }
 
 function togglePause() {
   if (isGameOver) return;
 
-  if (!isPaused) {
-    isPaused = true;
-    clearInterval(gameInterval);
-    pauseText.style.display = "block";
-  } else {
-    isPaused = false;
-    gameInterval = setInterval(moveEnemy, 50);
-    pauseText.style.display = "none";
-  }
+  isPaused = !isPaused;
+  pauseText.style.display = isPaused ? "block" : "none";
 }
+
 
 
 
@@ -254,7 +228,12 @@ function togglePause() {
 let startX = 0;
 
 gameArea.addEventListener("touchstart", (e) => {
+  isSwiping = true;
   startX = e.touches[0].clientX;
+});
+
+gameArea.addEventListener("touchend", () => {
+  isSwiping = false;
 });
 
 gameArea.addEventListener("touchmove", (e) => {
@@ -269,23 +248,27 @@ gameArea.addEventListener("touchmove", (e) => {
   player.style.left = playerX + "px";
   startX = moveX;
 });
-// ===== キーボード操作（PC用）=====
-document.body.tabIndex = 0;
-document.body.focus();
-
+// ===== キーボード操作（PC用・遅延なし）=====
 document.addEventListener("keydown", (e) => {
-  if (e.key === "ArrowLeft") {
-    stopMove();            // ← これが重要
-    startMove("left");
-  }
+  if (e.repeat) return;
 
+  if (e.key === "ArrowLeft") {
+    movingLeft = true;
+  }
   if (e.key === "ArrowRight") {
-    stopMove();            // ← これが重要
-    startMove("right");
+    movingRight = true;
   }
 });
 
-document.addEventListener("keyup", stopMove);
+document.addEventListener("keyup", (e) => {
+  if (e.key === "ArrowLeft") {
+    movingLeft = false;
+  }
+  if (e.key === "ArrowRight") {
+    movingRight = false;
+  }
+});
+
 
 document.addEventListener("keydown", (e) => {
   if (e.key === "p" || e.key === "P") {
@@ -293,8 +276,35 @@ document.addEventListener("keydown", (e) => {
   }
 });
 resetGame();
+let lastTime = 0;
+
+function gameLoop(time) {
+  if (!lastTime) lastTime = time;
+  const delta = time - lastTime;
+  lastTime = time;
+
+  if (!isPaused && !isGameOver) {
+
+    if (!isSwiping) {
+      if (movingLeft) playerX -= 300 * (delta / 1000);
+      if (movingRight) playerX += 300 * (delta / 1000);
+    }
+
+    if (playerX < 0) playerX = 0;
+    if (playerX > 360) playerX = 360;
+
+    player.style.left = playerX + "px";
+
+    moveEnemy(delta);
+  }
+
+  requestAnimationFrame(gameLoop);
+}
+
+requestAnimationFrame(gameLoop);
 
 </script>
 
 </body>
+
 <!-- update -->
