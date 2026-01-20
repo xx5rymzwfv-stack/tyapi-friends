@@ -193,7 +193,7 @@ function moveEnemy(delta) {
 
 function gameOver() {
   isGameOver = true;
-  alert("ゲームオーバー！OKでリスタート修正版４");
+  alert("ゲームオーバー！OKでリスタート 5");
   resetGame();
 }
 
@@ -202,6 +202,11 @@ function resetGame() {
   level = 1;
   enemyTop = -40;
   playerX = 180;
+
+  // ★★ これを追加 ★★
+  movingLeft = false;
+  movingRight = false;
+  isSwiping = false;
 
   scoreElement.textContent = score;
   player.style.left = playerX + "px";
