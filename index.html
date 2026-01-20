@@ -36,6 +36,7 @@ body {
       top: 0;
       left: 100px;
 }
+
      #controls {
   display: flex;
   justify-content: space-between;
@@ -63,6 +64,16 @@ body {
   font-size: 26px;
   padding: 12px 22px;
 }
+#pause {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 48px;
+  font-weight: bold;
+  display: none;
+  pointer-events: none;
+}
 
   </style>
 </head>
@@ -71,9 +82,10 @@ body {
   <h1>よけゲー</h1>
 
   <div id="game-area">
-    <div id="player"></div>
-    <div class="enemy"></div>
-  </div>
+  <div id="player"></div>
+  <div class="enemy"></div>
+  <div id="pause">PAUSE</div>
+</div>
 <div id="controls">
   <button id="left">◀︎</button>
   <button id="right">▶︎</button>
@@ -83,6 +95,9 @@ body {
   <p>スコア：<span id="score">0</span></p>
 
 <script>
+let isPaused = false;
+let isGameOver = false;
+let gameInterval = null;
 let level = 1;
 let score = 0;
 let playerX = 180;
@@ -138,6 +153,8 @@ const scoreElement = document.getElementById("score");
 const gameArea = document.getElementById("game-area");
 const enemy = document.querySelector(".enemy");
 const player = document.getElementById("player");
+const pauseText = document.getElementById("pause");
+
 
 let enemyTop = 0;
 let enemySpeed = 5;
@@ -166,13 +183,14 @@ function isCollision() {
 }
 
 function moveEnemy() {
+  if (isGameOver || isPaused) return;
+
+
   enemyTop += enemySpeed;
   enemy.style.top = enemyTop + "px";
 
-  // 敵が下まで行った
   if (enemyTop > 400) {
     enemyTop = 0;
-
     score++;
     scoreElement.textContent = score;
 
@@ -181,16 +199,50 @@ function moveEnemy() {
     randomEnemyPosition();
   }
 
-  // 当たり判定
   if (isCollision()) {
-    alert("ゲームオーバー！");
-    location.reload();
+    gameOver();
+  }
+}
+function gameOver() {
+  isGameOver = true;
+  clearInterval(gameInterval);
+  alert("ゲームオーバー！");
+  resetGame();
+}
+resetGame();
+
+function resetGame() {
+  score = 0;
+  level = 1;
+  enemyTop = 0;
+  playerX = 180;
+
+  scoreElement.textContent = score;
+  player.style.left = playerX + "px";
+
+  randomEnemySpeed();
+  randomEnemyPosition();
+  isPaused = false;
+  pauseText.style.display = "none";
+
+  isGameOver = false;
+  gameInterval = setInterval(moveEnemy, 50);
+}
+function togglePause() {
+  if (isGameOver) return;
+
+  if (!isPaused) {
+    isPaused = true;
+    clearInterval(gameInterval);
+    pauseText.style.display = "block";
+  } else {
+    isPaused = false;
+    gameInterval = setInterval(moveEnemy, 50);
+    pauseText.style.display = "none";
   }
 }
 
-randomEnemySpeed();
-randomEnemyPosition();
-setInterval(moveEnemy, 50);
+
 
 // ===== スワイプ操作 =====
 let startX = 0;
@@ -210,6 +262,24 @@ gameArea.addEventListener("touchmove", (e) => {
 
   player.style.left = playerX + "px";
   startX = moveX;
+});
+// ===== キーボード操作（PC用）=====
+document.body.tabIndex = 0;
+document.body.focus();
+
+document.addEventListener("keydown", (e) => {
+  if (moveInterval) return;
+
+  if (e.key === "ArrowLeft") startMove("left");
+  if (e.key === "ArrowRight") startMove("right");
+});
+
+document.addEventListener("keyup", stopMove);
+
+document.addEventListener("keydown", (e) => {
+  if (e.key === "p" || e.key === "P") {
+    togglePause();
+  }
 });
 
 </script>
