@@ -205,13 +205,16 @@ function moveEnemy() {
 }
 function gameOver() {
   isGameOver = true;
+
+  stopMove(); 
   clearInterval(gameInterval);
-  alert("ゲームオーバー！");
+  alert("ゲームオーバー！OKでリスタート");
   resetGame();
 }
-resetGame();
 
 function resetGame() {
+  stopMove();
+
   score = 0;
   level = 1;
   enemyTop = 0;
@@ -222,12 +225,14 @@ function resetGame() {
 
   randomEnemySpeed();
   randomEnemyPosition();
+
   isPaused = false;
   pauseText.style.display = "none";
-
   isGameOver = false;
+
   gameInterval = setInterval(moveEnemy, 50);
 }
+
 function togglePause() {
   if (isGameOver) return;
 
@@ -281,8 +286,8 @@ document.addEventListener("keydown", (e) => {
     togglePause();
   }
 });
+resetGame();
 
 </script>
 
 </body>
-<!-- update -->
