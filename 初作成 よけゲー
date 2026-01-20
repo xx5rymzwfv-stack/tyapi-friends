@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>よけゲー</title>
+
+  <!-- ここにCSSを書く -->
+  <style>
+body {
+      text-align: center;
+    }
+
+    #game-area {
+      width: 400px;
+      height: 400px;
+      background: #eee;
+      margin: 0 auto;
+      position: relative;
+      overflow: hidden;
+    }
+
+    #player {
+      width: 40px;
+      height: 40px;
+      background: blue;
+      position: absolute;
+      bottom: 10px;
+      left: 180px;
+    }
+
+    .enemy {
+      width: 40px;
+      height: 40px;
+      background: red;
+      position: absolute;
+      top: 0;
+      left: 100px;
+}
+     #controls {
+  display: flex;
+  justify-content: space-between;
+  width: 200px;
+  margin: 15px auto;
+}
+
+#controls button {
+  font-size: 24px;
+  padding: 10px 20px;
+}
+
+#controls {
+  position: absolute;
+  bottom: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  justify-content: space-between;
+  width: 240px;
+  opacity: 0.6;
+}
+
+#controls button {
+  font-size: 26px;
+  padding: 12px 22px;
+}
+
+  </style>
+</head>
+
+<body>
+  <h1>よけゲー</h1>
+
+  <div id="game-area">
+    <div id="player"></div>
+    <div class="enemy"></div>
+  </div>
+<div id="controls">
+  <button id="left">◀︎</button>
+  <button id="right">▶︎</button>
+</div>
+
+
+  <p>スコア：<span id="score">0</span></p>
+
+<script>
+let level = 1;
+let score = 0;
+let playerX = 180;
+let moveInterval = null;
+
+const leftBtn = document.getElementById("left");
+const rightBtn = document.getElementById("right");
+
+// プレイヤー移動
+function movePlayer(direction) {
+  if (direction === "left") playerX -= 5;
+  if (direction === "right") playerX += 5;
+
+  if (playerX < 0) playerX = 0;
+  if (playerX > 360) playerX = 360;
+
+  player.style.left = playerX + "px";
+}
+
+// 押しっぱなし処理
+function startMove(direction) {
+  stopMove();
+  moveInterval = setInterval(() => {
+    movePlayer(direction);
+  }, 30);
+}
+
+function stopMove() {
+  if (moveInterval) {
+    clearInterval(moveInterval);
+    moveInterval = null;
+  }
+}
+
+// ボタン操作
+leftBtn.addEventListener("touchstart", (e) => {
+  e.preventDefault();
+  startMove("left");
+});
+
+rightBtn.addEventListener("touchstart", (e) => {
+  e.preventDefault();
+  startMove("right");
+});
+
+leftBtn.addEventListener("touchend", stopMove);
+rightBtn.addEventListener("touchend", stopMove);
+leftBtn.addEventListener("touchcancel", stopMove);
+rightBtn.addEventListener("touchcancel", stopMove);
+
+const scoreElement = document.getElementById("score");
+
+const gameArea = document.getElementById("game-area");
+const enemy = document.querySelector(".enemy");
+const player = document.getElementById("player");
+
+let enemyTop = 0;
+let enemySpeed = 5;
+
+function randomEnemySpeed() {
+  enemySpeed = Math.floor(Math.random() * (4 + level)) + 5;
+}
+
+function randomEnemyPosition() {
+  const areaWidth = gameArea.clientWidth;
+  const enemyWidth = enemy.clientWidth;
+  const randomX = Math.random() * (areaWidth - enemyWidth);
+  enemy.style.left = randomX + "px";
+}
+
+function isCollision() {
+  const playerRect = player.getBoundingClientRect();
+  const enemyRect = enemy.getBoundingClientRect();
+
+  return !(
+    playerRect.right < enemyRect.left ||
+    playerRect.left > enemyRect.right ||
+    playerRect.bottom < enemyRect.top ||
+    playerRect.top > enemyRect.bottom
+  );
+}
+
+function moveEnemy() {
+  enemyTop += enemySpeed;
+  enemy.style.top = enemyTop + "px";
+
+  // 敵が下まで行った
+  if (enemyTop > 400) {
+    enemyTop = 0;
+
+    score++;
+    scoreElement.textContent = score;
+
+    level++;
+    randomEnemySpeed();
+    randomEnemyPosition();
+  }
+
+  // 当たり判定
+  if (isCollision()) {
+    alert("ゲームオーバー！");
+    location.reload();
+  }
+}
+
+randomEnemySpeed();
+randomEnemyPosition();
+setInterval(moveEnemy, 50);
+
+// ===== スワイプ操作 =====
+let startX = 0;
+
+gameArea.addEventListener("touchstart", (e) => {
+  startX = e.touches[0].clientX;
+});
+
+gameArea.addEventListener("touchmove", (e) => {
+  let moveX = e.touches[0].clientX;
+  let diff = moveX - startX;
+
+  playerX += diff * 0.3;
+
+  if (playerX < 0) playerX = 0;
+  if (playerX > 360) playerX = 360;
+
+  player.style.left = playerX + "px";
+  startX = moveX;
+});
+
+</script>
+
+</body>
+
