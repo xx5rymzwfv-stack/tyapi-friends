@@ -103,6 +103,7 @@ let playerX = 180;
 let movingLeft = false;
 let movingRight = false;
 let isSwiping = false;
+let lastDirection = null;
 
 const leftBtn = document.getElementById("left");
 const rightBtn = document.getElementById("right");
@@ -203,7 +204,6 @@ function resetGame() {
   enemyTop = -40;
   playerX = 180;
 
-  // ★★ これを追加 ★★
   movingLeft = false;
   movingRight = false;
   isSwiping = false;
@@ -259,21 +259,27 @@ document.addEventListener("keydown", (e) => {
 
   if (e.key === "ArrowLeft") {
     movingLeft = true;
+    lastDirection = "left";
   }
+
   if (e.key === "ArrowRight") {
     movingRight = true;
+    lastDirection = "right";
   }
 });
+
 
 document.addEventListener("keyup", (e) => {
   if (e.key === "ArrowLeft") {
     movingLeft = false;
+    if (lastDirection === "left") lastDirection = null;
   }
+
   if (e.key === "ArrowRight") {
     movingRight = false;
+    if (lastDirection === "right") lastDirection = null;
   }
 });
-
 
 document.addEventListener("keydown", (e) => {
   if (e.key === "p" || e.key === "P") {
@@ -291,9 +297,20 @@ function gameLoop(time) {
   if (!isPaused && !isGameOver) {
 
     if (!isSwiping) {
-      if (movingLeft) playerX -= 300 * (delta / 1000);
-      if (movingRight) playerX += 300 * (delta / 1000);
+  const speed = 300 * (delta / 1000);
+
+  if (movingLeft && movingRight) {
+    if (lastDirection === "left") {
+      playerX -= speed;
+    } else if (lastDirection === "right") {
+      playerX += speed;
     }
+  } else if (movingLeft) {
+    playerX -= speed;
+  } else if (movingRight) {
+    playerX += speed;
+  }
+}
 
     if (playerX < 0) playerX = 0;
     if (playerX > 360) playerX = 360;
@@ -311,5 +328,3 @@ requestAnimationFrame(gameLoop);
 </script>
 
 </body>
-
-<!-- update -->
