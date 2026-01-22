@@ -93,6 +93,7 @@ body {
 
 
   <p>スコア：<span id="score">0</span></p>
+<p>ハイスコア：<span id="highScore">0</span></p>
 
 <script>
 let isPaused = false;
@@ -100,10 +101,14 @@ let isGameOver = false;
 let level = 1;
 let score = 0;
 let playerX = 180;
+let highScore = localStorage.getItem("highScore")
+  ? Number(localStorage.getItem("highScore"))
+  : 0;
 let movingLeft = false;
 let movingRight = false;
 let isSwiping = false;
 let lastDirection = null;
+let isInvincible = false;
 
 const leftBtn = document.getElementById("left");
 const rightBtn = document.getElementById("right");
@@ -134,8 +139,11 @@ rightBtn.addEventListener("touchcancel", () => {
   movingRight = false;
 });
 
-
 const scoreElement = document.getElementById("score");
+const highScoreElement = document.getElementById("highScore");
+highScoreElement.textContent = highScore;
+
+highScoreElement.textContent = highScore;
 
 const gameArea = document.getElementById("game-area");
 const enemy = document.querySelector(".enemy");
@@ -187,14 +195,23 @@ function moveEnemy(delta) {
     randomEnemyPosition();
   }
 
-  if (isCollision()) {
+  // ★ 無敵中は当たり判定しない
+  if (isCollision() && !isInvincible) {
     gameOver();
   }
 }
 
+
 function gameOver() {
+
+  if (score > highScore) {
+    highScore = score;
+    localStorage.setItem("highScore", highScore);
+    highScoreElement.textContent = highScore;
+  }
+
   isGameOver = true;
-  alert("ゲームオーバー！OKでリスタート 5");
+  alert("ゲームオーバー！OKでリスタート 6 ");
   resetGame();
 }
 
@@ -217,6 +234,7 @@ function resetGame() {
   isPaused = false;
   pauseText.style.display = "none";
   isGameOver = false;
+  startInvincible();
 }
 
 function togglePause() {
@@ -312,6 +330,7 @@ function gameLoop(time) {
   }
 }
 
+
     if (playerX < 0) playerX = 0;
     if (playerX > 360) playerX = 360;
 
@@ -321,6 +340,18 @@ function gameLoop(time) {
   }
 
   requestAnimationFrame(gameLoop);
+}
+
+function startInvincible() {
+  isInvincible = true;
+
+  // 見た目で分かるように（半透明）
+  player.style.opacity = "0.5";
+
+  setTimeout(() => {
+    isInvincible = false;
+    player.style.opacity = "1";
+  }, 1500); // 1.5秒
 }
 
 requestAnimationFrame(gameLoop);
